@@ -1,0 +1,38 @@
+---
+# Setting to false will skip firewalld configuration
+# Default: true
+postfix_configure_firewalld: true
+
+# Setting to true will enable TLS
+# Default: false
+postfix_enable_tls: false
+
+# Directory to place SSL certificate files, will be ignored when postfix_enable_tls is false
+# Default: /etc/postfix/ssl
+# postfix_ssl_directory: /etc/postfix/ssl
+
+# SSL Certificate files, needs to be placed in directory files/
+# postfix_ssl_certificate: postfix_ssl_certificate.crt
+# postfix_ssl_key: postfix_ssl_key.pem
+
+# CONFIGURATION
+
+# REQUIRED
+# Postfix configuration
+mydomain: example.com
+mynetworks:
+  - 192.168.1.0/24
+  - 10.0.0.1/32
+
+# OPTIONAL
+# Postfix configuration
+# myhostname: kvm-smtp01-srv.example.com # When not set, will default to {{ ansible_nodename }}
+# myorigin: kvm-smtp01-srv.example.com # When not set, will default to {{ ansible_nodename }}
+# inet_interfaces: eth0 # When not set, will default to 'all'
+
+# OPTIONAL
+# Place to set undefined values
+postfix_additional_config:
+  smtp_destination_concurrency_limit: 10
+  smtp_destination_rate_delay: 1s
+  smtp_extra_recipient_limit: 10

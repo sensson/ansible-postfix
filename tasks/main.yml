@@ -1,0 +1,82 @@
+---
+- name: Ensure Postfix package
+  package:
+    name: postfix
+    state: present
+  notify:
+    - restart postfix
+
+- name: Block for TLS configuration
+  block:
+    - name: Check if SSL directory exists
+      stat:
+        path: "{{ postfix_ssl_directory }}"
+      register: postfix_check_exists
+
+    - name: Ensure SSL directory
+      file:
+        path: "{{ postfix_ssl_directory }}"
+        state: directory
+        owner: root
+        group: root
+        mode: 0750
+      when: not postfix_check_exists.stat.exists
+      notify:
+        - restart postfix
+
+    - name: Ensure SSL certificate
+      copy:
+        src: "{{ postfix_ssl_certificate }}"
+        dest: "{{ postfix_ssl_directory }}/{{ postfix_ssl_certificate }}"
+        owner: root
+        group: root
+      notify:
+        - restart postfix
+
+    - name: Ensure SSL key
+      copy:
+        src: "{{ postfix_ssl_key }}"
+        dest: "{{ postfix_ssl_directory }}/{{ postfix_ssl_key }}"
+        owner: root
+        group: root
+      notify:
+        - restart postfix
+  when:
+    postfix_enable_tls
+
+- name: Ensure configuration using the template
+  template:
+    src: main.cf.j2
+    dest: /etc/postfix/main.cf
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart postfix
+
+- name: Block for firewalld configuration
+  block:
+    - name: Ensure firewalld package
+      package:
+        name: firewalld
+        state: present
+
+    - name: Ensure firewalld is running and enabled
+      service:
+        name: firewalld
+        state: started
+        enabled: yes
+
+    - name: Open SMTP service in FirewallD
+      firewalld:
+        service: smtp
+        permanent: true
+        state: enabled
+        immediate: true
+  when: postfix_configure_firewalld
+
+- name: Ensure postfix is running and enabled
+  service:
+    name: postfix
+    state: started
+    enabled: yes

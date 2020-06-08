@@ -1,0 +1,32 @@
+queue_directory = /var/spool/postfix
+command_directory = /usr/sbin
+data_directory = /var/lib/postfix
+mail_owner = postfix
+append_dot_mydomain = no
+readme_directory = no
+smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination
+myhostname = {{ myhostname|default(ansible_nodename) }}
+myorigin = {{ myorigin|default(ansible_nodename) }}
+mydomain = {{ mydomain }}
+mydestination = $myhostname, localhost.$mydomain, localhost
+mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 {% for network in mynetworks %}{{ network }} {% endfor %}
+
+mailbox_size_limit = 0
+recipient_delimiter = +
+inet_interfaces = {{ inet_interfaces|default('all') }}
+inet_protocols = all
+
+{% if postfix_enable_tls %}
+smtp_use_tls = yes
+smtp_sasl_security_options = noanonymous
+smtp_sasl_tls_security_options = noanonymous
+smtp_tls_security_level = encrypt
+smtp_tls_cert_file = {{ postfix_ssl_directory }}/{{ postfix_ssl_certificate }}
+smtp_tls_key_file = {{ postfix_ssl_directory }}/{{ postfix_ssl_key }}
+{% endif %}
+
+{% if postfix_additional_config is defined %}
+{% for k, v in postfix_additional_config.items() %}
+{{ k }} = {{ v }}
+{% endfor %}
+{% endif %}
